@@ -1,11 +1,47 @@
 # WeeklyProject03_AssetTracking
-## Goal
-Asset Tracking is a way to keep track of the company assets such as computer and phones. All assets have an end of life which for simplicity reasons is 3 years. Users have possibilities to input data and print outfunctionality of user data.
 
-## Program
-User input is stored in a list of assets. Each asset has a name, purchase date, and end of life date. The program calculates the end of life date based on the purchase date and prints out the asset information.
-Also, the program prints out some sample data to show how the program works. The sample data includes some assets with different purchase dates and end of life dates.
+Small console application to track company assets (computers and phones). The app stores simple asset records, calculates end-of-life (EoL) and prints a formatted asset list with local and converted prices.
 
-## Future work
-The input system come from weekly project 02, it is need to rewrite the input system to make it could use in future project. 
-The program could be extended to include more functionality such as editing and deleting assets.
+Key points
+- Language: C# targeting .NET 10
+- Project style: layered architecture (Presentation, Application, Domain, Infrastructure)
+
+## Features
+- Add assets via interactive console input
+- Sample/test assets are inserted at startup for quick inspection
+- List assets grouped by office/type with price converted to USD using a currency service
+- Simple domain model with `Asset`, `Computer`, and `Phone`
+
+## Getting started
+The console app will prompt for new assets. Enter `Q` for the office prompt to quit input mode and display the list.
+
+## Usage notes
+- Purchase date must be entered as `yyyy-MM-dd`.
+- Supported currencies are read from the `CurrencyService` at startup; input must match an available ISO currency code (e.g. `USD`, `EUR`, `SEK`).
+
+## Project structure (high level)
+- `Program.cs` — Console UI / entry point
+- `Application/Use_Cases` — Use cases: `AddAsset`, `ListAssets`
+- `Application/Interfaces` — Port interfaces such as `ICurrencyService` and repository interface
+- `Domain/Entities` — Domain models: `Asset`, `Computer`, `Phone`
+- `Domain/Services` — Domain-level logic (EoL calculation, validations)
+- `Infrastruture` — Implementations: in-memory repository and currency service/converter
+
+## Design
+This project follows a layered clean architecture:
+- Presentation (console) depends on Application use cases
+- Application defines ports and coordinates Domain and Infrastructure
+- Domain contains entity and business rules
+- Infrastructure implements persistence and external services (currency)
+
+## System Architecture (UML)
+
+![UML Diagram](AIGenerateImage.png)
+
+## Future work / Improvements
+- Replace console input with a small API or UI
+- Add persistence to a database
+- Add CRUD operations and validation feedback
+- Add unit and integration tests
+- Improve currency fetching / caching and error handling
+
