@@ -1,8 +1,80 @@
 ﻿using System.Globalization;
 using System.Xml.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 List<Asset> assets = new List<Asset>();
 var rates = await LoadEcbRatesAsync();
+
+//Add items until user enter "q" and print the list
+while (true)
+{
+
+    ColoredString("To enter a new product - follow the steps | To quit - enter: \"Q\" ", ConsoleColor.Yellow);
+    Console.Write("Enter an Office: ");
+    string inputOffice = Console.ReadLine() ?? "Unknown";
+
+    if (inputOffice.Trim().ToLower() == "q") break;
+
+    int typeNumber;
+
+    while (true)
+    {
+        Console.Write("Enter 1 or 2 (1:Computer 2:Phone): ");
+        string inputType = Console.ReadLine();
+
+        if (int.TryParse(inputType, out typeNumber) && (typeNumber == 1 || typeNumber == 2))
+            break;
+
+        Console.WriteLine("Invalid input. Try again.");
+    }
+
+    Console.Write("Enter a Brand: ");
+    string inputBrand = Console.ReadLine() ?? "Unknown";
+
+    Console.Write("Enter a Model Name: ");
+    string inputModelName= Console.ReadLine() ?? "Unknown";
+
+    DateTime validDate;
+
+    while (true)
+    {
+        Console.Write("Enter a Purchase date (yyyy-mm-dd): ");
+        string inputDate = Console.ReadLine() ?? "Unknown";
+
+        string format = "yyyy-MM-dd";
+
+        bool isValid = DateTime.TryParseExact(inputDate, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out validDate);
+
+        if (isValid) break;
+        else Console.WriteLine("Invalid date format. Please try again. ");
+    }
+
+    while (true)
+    {
+        Console.Write("Enter Local Currency (EUR, SEK, USD): ");
+        string? inputCurrency = Console.ReadLine();
+
+        if (inputCurrency != null) inputCurrency = inputCurrency?.Trim().ToUpper() ?? "USD";
+        else
+        {
+            Console.WriteLine("Set to Default currency: USD");
+            inputCurrency = "USD";
+        }
+
+        Console.Write("Enter Local price: ");
+        string? inputPrice = Console.ReadLine();
+
+        //Error handling of the price
+        if (decimal.TryParse(inputPrice, out decimal roundPrice))
+        {
+            roundPrice = Math.Round(roundPrice, 2); //Round to 2 decimals
+            if (typeNumber == 1) assets.Add(new Computer(inputBrand, inputModelName, inputOffice, validDate, roundPrice, inputCurrency));
+            if (typeNumber == 2) assets.Add(new Phone(inputBrand, inputModelName, inputOffice, validDate, roundPrice, inputCurrency));
+            break;
+        }
+        else Console.WriteLine("Invalid input of price. Please try again. ");
+    }
+}
 
 //Example assets from the documentation with modification
 assets.Add(new Phone("iPhone", "8", "Spain", DateTime.Now.AddMonths(-36 + 2), 1999m, "EUR"));
@@ -41,15 +113,22 @@ foreach (var asset in sortedAssets)
         Console.ForegroundColor = ConsoleColor.White;
     }
 
-    decimal priceInLocal = ConvertCurrency(asset.priceInDollar, "USD", asset.currencyLocal);
-    string strPriceInLocal = $"{priceInLocal:F2}".PadRight(20);
-    Console.WriteLine($"{asset.office.PadRight(15)}{asset.type.PadRight(15)}{asset.brand.PadRight(20)}{asset.modelName.PadRight(20)}{asset.priceInDollar.ToString().PadRight(20)}{strPriceInLocal}{asset.purchaseDate.ToShortDateString().PadRight(20)}");
+    decimal priceInDollar = ConvertCurrency(asset.priceInLocal, asset.currencyLocal, "USD");
+    string strPriceInDollar = $"{priceInDollar:F2}".PadRight(20);
+    Console.WriteLine($"{asset.office.PadRight(15)}{asset.type.PadRight(15)}{asset.brand.PadRight(20)}{asset.modelName.PadRight(20)}{strPriceInDollar}{asset.priceInLocal.ToString().PadRight(20)}{asset.purchaseDate.ToShortDateString().PadRight(20)}");
 }
 
 Console.ResetColor();
 Console.ReadLine();
 
 //Functions
+void ColoredString(string text, ConsoleColor consoleColor)
+{
+    Console.ForegroundColor = consoleColor;
+    Console.WriteLine(text);
+    Console.ResetColor();
+}
+
 static async Task<Dictionary<string, decimal>> LoadEcbRatesAsync()
 {
     string url = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
@@ -109,18 +188,18 @@ class Asset
     public string modelName { get; set; }
     public string office { get; set; }
     public DateTime purchaseDate { get; set; }
-    public decimal priceInDollar { get; set; }
+    public decimal priceInLocal { get; set; }
     public string currencyLocal { get; set; }
 
     public DateTime endOfLife => purchaseDate.AddYears(3);
 
-    public Asset(string brand, string modelName, string office, DateTime purchaseDate, decimal priceInDollar, string currencyLocal)
+    public Asset(string brand, string modelName, string office, DateTime purchaseDate, decimal priceInLocal, string currencyLocal)
     {
         this.brand = brand;
         this.modelName = modelName;
         this.office = office;
         this.purchaseDate = purchaseDate;
-        this.priceInDollar = priceInDollar;
+        this.priceInLocal = priceInLocal;
         this.currencyLocal = currencyLocal;
     }
 }
@@ -128,8 +207,8 @@ class Asset
 // Computer class
 class Computer : Asset
 {
-    public override string type => "Computer";
-   public Computer(string brand, string modelName, string office, DateTime purchaseDate, decimal priceInDollar, string currencyLocal) : base(brand, modelName, office, purchaseDate, priceInDollar, currencyLocal)
+   public override string type => "Computer";
+   public Computer(string brand, string modelName, string office, DateTime purchaseDate, decimal priceInLocal, string currencyLocal) : base(brand, modelName, office, purchaseDate, priceInLocal, currencyLocal)
     {
     }
 }
@@ -138,7 +217,7 @@ class Computer : Asset
 class Phone : Asset
 {
     public override string type => "Phone";
-    public Phone(string brand, string modelName, string office, DateTime purchaseDate, decimal priceInDollar, string currencyLocal) : base(brand, modelName, office, purchaseDate, priceInDollar, currencyLocal)
+    public Phone(string brand, string modelName, string office, DateTime purchaseDate, decimal priceInLocal, string currencyLocal) : base(brand, modelName, office, purchaseDate, priceInLocal, currencyLocal)
     {
     }
 }
